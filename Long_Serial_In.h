@@ -1,8 +1,7 @@
-#ifndef _print_bytes_H
-#define _print_bytes_H
+#ifndef _Long_Serial_In_H
+#define _Long_Serial_In_H
 
 #include "main.h"
-#include "UART.h"
 
 // ASCII characters
 #define space (0x20)
@@ -12,11 +11,11 @@
 #define DEL (0x7F)
 
 
+
 // ------ Public function prototypes -------------------------------
 
-void print_16bytes(uint8_t * array_in_p);
+uint32_t long_serial_input(void);
 
-void print_memory(uint8_t * array_in_p, uint16_t number_of_bytes);
 
 
 #endif

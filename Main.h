@@ -44,13 +44,10 @@
 // SHOULD NOT NEED TO EDIT THE SECTIONS BELOW
 //------------------------------------------------------------------
 
-// Typedefs (see Chap 5) These types match with stdint.h  
+// Typedefs (see Chap 5)  
 typedef unsigned char uint8_t;
 typedef unsigned int  uint16_t;
 typedef unsigned long uint32_t;
-typedef char int8_t;
-typedef int  int16_t;
-typedef long int32_t;
 
 // Interrupts (see Chap 7)  
 #define Timer_0_Overflow 1

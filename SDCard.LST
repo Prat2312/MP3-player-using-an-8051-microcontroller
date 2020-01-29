@@ -1,0 +1,107 @@
+C51 COMPILER V6.02  SDCARD                                                                 10/11/2019 18:41:09 PAGE 1   
+
+
+C51 COMPILER V6.02, COMPILATION OF MODULE SDCARD
+OBJECT MODULE PLACED IN .\SDCard.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE .\SDCard.c DEBUG OBJECTEXTEND
+
+stmt level    source
+
+   1          #include <stdio.h>
+   2          #include "main.h"
+   3          #include "print_bytes.h"
+   4          #include "UART.h"
+   5          #include "SPI.h"
+   6          #include "Timer0_hardware_delay_1ms.h"
+   7          #include "Long_Serial_In.h"
+   8          #include "LCD_Routines.h"
+   9          #include "LCD_hardware_functions.h"
+  10          
+  11          uint8_t Send_Command(uint8_t CMD_value, uint32_t argument)
+  12          {	uint8_t error_flag,send_value,return_value,no_error,SPI_error,rec_value,;
+*** ERROR C141 IN LINE 12 OF .\SDCARD.C: syntax error near ';'
+  13   1      	// First check to see if CMD_valueis valid (i.e. <64).
+  14   1      	if(CMD_value<64)
+  15   1      	{
+  16   1      		// If it is valid, then start sending the command 
+  17   1      		return_value=no_errors;
+*** ERROR C231 IN LINE 17 OF .\SDCARD.C: 'return_value': redefinition
+*** ERROR C202 IN LINE 17 OF .\SDCARD.C: 'no_errors': undefined identifier
+  18   1      		// If it is not valid exit the function with an illegal command error
+  19   1      		return_value=illegal_command;
+*** ERROR C202 IN LINE 19 OF .\SDCARD.C: 'illegal_command': undefined identifier
+  20   1      		// The first byte to send is the CMD_valuewith the start and transmission bits
+  21   1      		send_value=0x40|CMD_value;
+  22   1      		// Send using the SPI_Transferfunction
+  23   1      		// A error flag can be used to verify the SPI transfer was succesful.
+  24   1      		// The received value is not used in this function.
+  25   1      		error_flag=SPI_Transfer(send_value,&rec_value);
+  26   1      	}// If an error has occurred, then update the return value
+  27          	if(error_flag!=no_errors)
+*** ERROR C141 IN LINE 27 OF .\SDCARD.C: syntax error near 'if'
+*** ERROR C141 IN LINE 27 OF .\SDCARD.C: syntax error near '!=', expected ')'
+*** ERROR C129 IN LINE 27 OF .\SDCARD.C: missing ';' before ')'
+  28          	{
+  29          		return_value=SPI_error;
+  30          	}
+  31          	//   Send the argument next starting with the most significant byte.  Right 
+  32          	// shifting the argument by 24 will place the MSB in the lowest byte which is 
+  33          	// then assigned to send_value.
+  34          	if(return_value==no_errors)
+  35          	{
+  36          		send_value=(uint8_t)(argument>>24);// Send using the SPI_Transferfunction
+  37          		error_flag=SPI_Transfer(send_value,&rec_value);
+  38          		if(error_flag!=no_errors)
+  39          		{
+  40          			return_value=SPI_error;
+  41          		}
+  42          	}
+  43          	//   Repeat for each byte of the argument.
+  44          	if(return_value==no_errors)
+  45          	{
+  46          		send_value=(uint8_t)(argument>>16);
+  47          		error_flag=SPI_Transfer(send_value,&rec_value);
+  48          		if(error_flag!=no_errors)
+C51 COMPILER V6.02  SDCARD                                                                 10/11/2019 18:41:09 PAGE 2   
+
+  49          		{
+  50          			return_value=SPI_error;
+  51          		}
+  52          	}
+  53          	send_value=(uint8_t)(argument>>8);
+  54          	send_value=(uint8_t)(argument);
+  55          	//   The programmer may wish to place this into a for loop instead 
+  56          	// The index of the for loop is used to determine how much to shift
+  57          	for(index=0;index<4;index++)
+  58          	{
+  59          		if( return_value==no_errors)
+  60          		{
+  61          			send_value=(uint8_t)(argument>>(24-(index*8)));
+  62          			error_flag=SPI_Transfer(send_value,&rec_value);
+  63          			if(error_flag!=no_errors)
+  64          			{
+  65          				return_value=SPI_error;
+  66          			}
+  67          		}
+  68          	}
+  69          	// The final byte to send is determined by the CMD_value.
+  70          	if(CMD_value==CMD0) 
+  71          	{
+  72          		send_value=0x95;
+  73          	}
+  74          	else if(CMD_value==CMD8) 
+  75          	{
+  76          		send_value=0x87;
+  77          	}
+  78          	else{send_value=0x01;  // end bit only, CRC7=0}
+  79          	//   Send using the SPI_Transferfunction
+  80          	if(return_value==no_errors)
+  81          	{
+  82          		error_flag=SPI_Transfer(send_value,&rec_value);
+  83          		if(error_flag!=no_errors)
+  84          		{
+  85          			return_value=SPI_error;
+  86          		}
+  87          	}//   Return the error flag.return return_value;}
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  7 ERROR(S)

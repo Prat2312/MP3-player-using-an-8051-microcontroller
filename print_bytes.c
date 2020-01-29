@@ -1,7 +1,8 @@
-ww#include <stdio.h>
+#include <stdio.h>
 #include "main.h"
 #include "print_bytes.h"
 #include "UART.h"
+
 
 
 
@@ -12,25 +13,25 @@ INPUT: Pointer to an array of eight bytes
 RETURNS: nothing
 CAUTION: 
 ************************************************************************/
-void print_16bytes(uint8_t * array_in)
+void print_16bytes(uint8_t * array_in_p)
 {
-   uint8_t * input;
+   uint8_t * input_p;
    uint8_t index, dat;
-   input = array_in;
-   printf("%p ",input);
+   input_p = array_in_p;
+   printf("%p ",input_p);
    for (index=0;index<16;index++)
    {
-      dat=*(input+index);
+      dat=*(input_p+index);
       printf("%2.2bX ",dat);
    }
    for (index=0;index<16;index++)
    { 
-      dat=*(input+index);
-      if (dat<32 || dat>127) dat=46;
-      putchar(dat);
+      dat=*(input_p+index);
+      if (dat<32 || dat>126) dat=46;
+      UART_Transmit(dat);
    }
-   putchar(CR);
-   putchar(LF);
+   UART_Transmit(CR);
+   UART_Transmit(LF);
 }
 
 
@@ -40,19 +41,19 @@ INPUT: Pointer to an array, number of bytes to print
 RETURNS: nothing
 CAUTION: 
 ************************************************************************/
-void print_memory(uint8_t * array_in, uint16_t number_of_bytes)
+void print_memory(uint8_t * array_in_p, uint16_t number_of_bytes)
 {
-   uint8_t * input;
+   uint8_t * input_p;
    uint16_t i;
-   input = array_in;
-   i = (uint16_t) input;
+   input_p = array_in_p;
+   i = (uint16_t) input_p;
    i &= 0x000f;
-   input = input - i;
+   input_p = input_p - i;
    printf("Addr.   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n\r");
    do
    {
-      print_16bytes(input);
-      input+=16;
-   }while(input<(array_in+number_of_bytes));
+      print_16bytes(input_p);
+      input_p+=16;
+   }while(input_p<(array_in_p+number_of_bytes));
 }
 		
