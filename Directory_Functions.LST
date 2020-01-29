@@ -1,0 +1,248 @@
+C51 COMPILER V6.02  DIRECTORY_FUNCTIONS                                                    12/08/2019 18:42:41 PAGE 1   
+
+
+C51 COMPILER V6.02, COMPILATION OF MODULE DIRECTORY_FUNCTIONS
+OBJECT MODULE PLACED IN .\Directory_Functions.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE .\Directory_Functions.c DEBUG OBJECTEXTEND
+
+stmt level    source
+
+   1          #include <stdio.h>
+   2          #include "main.h"
+   3          #include "UART.h"
+   4          #include "Directory_Functions.h"
+   5          #include "File_System.h"
+   6          #include "read_sector.h"
+   7          
+   8          uint32_t idata FirstDataSec_g, StartofFAT_g, FirstRootDirSec_g, RootDirSecs_g;
+   9          uint16_t idata BytesPerSec_g;
+  10          uint8_t idata SecPerClus_g, FATtype_g, BytesPerSecShift_g,FATshift_g;
+  11          
+  12          
+  13          
+  14          #define no_errors (0)
+  15          
+  16          
+  17          
+  18          
+  19          
+  20          /***********************************************************************
+  21          DESC: Prints all short file name entries for a given directory 
+  22          INPUT: Starting Sector of the directory and the pointer to a 
+  23          block of memory in xdata that can be used to read blocks from the SD card
+  24          RETURNS: uint16_t number of entries found in the directory
+  25          CAUTION: Supports FAT16, SD_shift must be set before using this function
+  26          ************************************************************************/
+  27          
+  28          
+  29          
+  30          /*uint16_t  Print_Directory(uint32_t Sector_num, uint8_t xdata * array_in)
+  31          { 
+  32             uint32_t Sector, max_sectors;
+  33             uint16_t i, entries;
+  34             uint8_t temp8, j, attr, out_val, error_flag;
+  35             uint8_t * values;
+  36          
+  37             values=array_in;
+  38             entries=0;
+  39             i=0;
+  40             if (Sector_num<FirstDataSec_g)  // included for FAT16 compatibility
+  41             { 
+  42                max_sectors=RootDirSecs_g;   // maximum sectors in a FAT16 root directory
+  43             }
+  44             else
+  45             {
+  46                max_sectors=SecPerClus_g;
+  47             }
+  48             Sector=Sector_num;
+  49             error_flag=Read_Sector(Sector, BytesPerSec_g, values);
+  50             if(error_flag==no_errors)
+  51             {
+  52               do
+  53               {
+  54           
+  55          	    temp8=read8(0+i,values);  // read first byte to see if empty
+C51 COMPILER V6.02  DIRECTORY_FUNCTIONS                                                    12/08/2019 18:42:41 PAGE 2   
+
+  56                  if((temp8!=0xE5)&&(temp8!=0x00))
+  57          	    {  
+  58          	       attr=read8(0x0b+i,values);
+  59          		   	YELLOWLED=1;
+  60          		   if((attr&0x0E)==0)   // if hidden, system or Vol_ID bit is set do not print
+  61          		   {
+  62          		      entries++;
+  63          			  printf("%5d. ",entries);  // print entry number with a fixed width specifier
+  64          		      for(j=0;j<8;j++)
+  65          			  {
+  66          			     out_val=read8(i+j,values);   // print the 8 byte name
+  67          			     putchar(out_val);
+  68          			  }
+  69                        if((attr&0x10)==0x10)  // indicates directory
+  70          			  {
+  71          			     for(j=8;j<11;j++)
+  72          			     {
+  73          			        out_val=read8(i+j,values);
+  74          			        putchar(out_val);
+  75          			     }
+  76          			     printf("[DIR]\n");
+  77          			  }
+  78          			  else       // print a period and the three byte extension for a file
+  79          			  {
+  80          			     putchar(0x2E);       
+  81          			     for(j=8;j<11;j++)
+  82          			     {
+  83          			        out_val=read8(i+j,values);
+  84          			        putchar(out_val);
+  85          			     }
+  86          			     putchar(0x0d);
+  87                           putchar(0x0a);
+  88          			  }
+  89          		    }
+  90          
+  91          		}
+  92          		i=i+32;  // next entry
+  93          
+  94          		if(i>510)
+  95          		{
+  96          		  Sector++;
+  97                    if((Sector-Sector_num)<max_sectors)
+  98          		  {
+  99                        error_flag=Read_Sector(Sector, BytesPerSec_g, values);
+ 100          			  if(error_flag!=no_errors)
+ 101          			    {
+ 102          			      entries=0;   // no entries found indicates disk read error
+ 103          				  temp8=0;     // forces a function exit
+ 104          			    }
+ 105          			    i=0;
+ 106          		  }
+ 107          		  else
+ 108          		  {
+ 109          			  entries=entries|more_entries;  // set msb to indicate more entries in another cluster
+ 110          			  temp8=0;                       // forces a function exit
+ 111          		  }
+ 112          		}
+ 113                 
+ 114          	  }while(temp8!=0);
+ 115          	}
+ 116          	else
+ 117          	{
+C51 COMPILER V6.02  DIRECTORY_FUNCTIONS                                                    12/08/2019 18:42:41 PAGE 3   
+
+ 118          	   entries=0;    // no entries found indicates disk read error
+ 119          	}
+ 120              return entries;
+ 121           }
+ 122          
+ 123          
+ 124          /***********************************************************************
+ 125          DESC: Uses the same method as Print_Directory to locate short file names,
+ 126                but locates a specified entry and returns and cluster  
+ 127          INPUT: Starting Sector of the directory, an entry number and a pointer to a 
+ 128          block of memory in xdata that can be used to read blocks from the SD card
+ 129          RETURNS: uint32_t with cluster in lower 28 bits.  Bit 28 set if this is 
+ 130                   a directory entry, clear for a file.  Bit 31 set for error.
+ 131          CAUTION: 
+ 132          ************************************************************************/
+ 133          
+ 134          uint32_t Read_Dir_Entry(uint32_t Sector_num, uint16_t Entry, uint8_t xdata * array_in)
+ 135          { 
+ 136   1         uint32_t Sector, max_sectors, return_clus;
+ 137   1         uint16_t i, entries;
+ 138   1         uint8_t temp8, attr, error_flag;
+ 139   1         uint8_t * values;
+ 140   1      
+ 141   1         values=array_in;
+ 142   1         entries=0;
+ 143   1         i=0;
+ 144   1         return_clus=0;
+ 145   1         if (Sector_num<FirstDataSec_g)  // included for FAT16 compatibility
+ 146   1         { 
+ 147   2            max_sectors=RootDirSecs_g;   // maximum sectors in a FAT16 root directory
+ 148   2         }
+ 149   1         else
+ 150   1         {
+ 151   2            max_sectors=SecPerClus_g;
+ 152   2         }
+ 153   1         Sector=Sector_num;
+ 154   1         error_flag=Read_Sector(Sector, BytesPerSec_g, values);
+ 155   1         if(error_flag==no_errors)
+ 156   1         {
+ 157   2           do
+ 158   2           {
+ 159   3              temp8=read8(0+i,values);  // read first byte to see if empty
+ 160   3              if((temp8!=0xE5)&&(temp8!=0x00))
+ 161   3      	    {  
+ 162   4      	       attr=read8(0x0b+i,values);
+ 163   4      		   if((attr&0x0E)==0)    // if hidden do not print
+ 164   4      		   {
+ 165   5      		      entries++;
+ 166   5                    if(entries==Entry)
+ 167   5                    {
+ 168   6      			    if(FATtype_g==FAT32)
+ 169   6                      {
+ 170   7                         return_clus=read8(21+i,values);
+ 171   7      				   return_clus&=0x0F;            // makes sure upper four bits are clear
+ 172   7      				   return_clus=return_clus<<8;
+ 173   7                         return_clus|=read8(20+i,values);
+ 174   7                         return_clus=return_clus<<8;
+ 175   7                      }
+ 176   6                      return_clus|=read8(27+i,values);
+ 177   6      			    return_clus=return_clus<<8;
+ 178   6                      return_clus|=read8(26+i,values);
+ 179   6      			    attr=read8(0x0b+i,values);
+C51 COMPILER V6.02  DIRECTORY_FUNCTIONS                                                    12/08/2019 18:42:41 PAGE 4   
+
+ 180   6      			    if(attr&0x10) return_clus|=directory_bit;
+ 181   6                      temp8=0;    // forces a function exit
+ 182   6                    }
+ 183   5                    
+ 184   5      		   }
+ 185   4              }
+ 186   3      		i=i+32;  // next entry
+ 187   3      		if(i>510)
+ 188   3      		{
+ 189   4      		   Sector++;
+ 190   4      		   if((Sector-Sector_num)<max_sectors)
+ 191   4      		   {
+ 192   5                    error_flag=Read_Sector(Sector, BytesPerSec_g, values);
+ 193   5      			  if(error_flag!=no_errors)
+ 194   5      			  {
+ 195   6      			     return_clus=no_entry_found;
+ 196   6                       temp8=0; 
+ 197   6      			  }
+ 198   5      			  i=0;
+ 199   5      		   }
+ 200   4      		   else
+ 201   4      		   {
+ 202   5      			  temp8=0;                       // forces a function exit
+ 203   5      		   }
+ 204   4      		}
+ 205   3              
+ 206   3      	 }while(temp8!=0);
+ 207   2         }
+ 208   1         else
+ 209   1         {
+ 210   2      	 return_clus=no_entry_found;
+ 211   2         }
+ 212   1         if(return_clus==0) return_clus=no_entry_found;
+ 213   1         return return_clus;
+ 214   1      }
+ 215          
+ 216          
+ 217          
+ 218          
+ 219          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    665    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      30
+   IDATA SIZE       =     22    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

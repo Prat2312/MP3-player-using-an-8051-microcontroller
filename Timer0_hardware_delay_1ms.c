@@ -2,7 +2,6 @@
 #include "PORT.h"
 #include "Timer0_hardware_delay_1ms.h"
 
-//****** Timer 0 is used for blocking delays *******//
 
 // ***** Caution: Uses Timer0 *******//
 void Timer0_DELAY_1ms(uint16_t duration)

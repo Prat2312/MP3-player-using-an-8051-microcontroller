@@ -1,0 +1,95 @@
+C51 COMPILER V6.02  OUTPUTS                                                                12/08/2019 18:42:39 PAGE 1   
+
+
+C51 COMPILER V6.02, COMPILATION OF MODULE OUTPUTS
+OBJECT MODULE PLACED IN .\Outputs.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE .\Outputs.c DEBUG OBJECTEXTEND
+
+stmt level    source
+
+   1          #include "main.h"
+   2          #include "PORT.H"
+   3          
+   4          /*********************************************************************
+   5          *    Port Output Functions
+   6          ********************************************************************/
+   7          
+   8          /***********************************************************************
+   9          DESC:  Writes the value passed as a parameter to the specified port
+  10          INPUT: uint8_t value to be written to a port
+  11          RETURNS: Nothing
+  12          CAUTION: Only uncomment the functions that are to be used
+  13          ************************************************************************/
+  14          /*void Output_P0_bit(uint8_t Port_Data)
+  15          {
+  16            P0=Port_Data;
+  17          }*/
+  18          
+  19          
+  20          /*********************************************************************
+  21          *    Bit Output Functions
+  22          ********************************************************************/
+  23          
+  24          
+  25          /***********************************************************************
+  26          DESC:  Clears the specified bits on a specified port
+  27          INPUT: 8-bit pattern with '1' bits for the bits to be cleared
+  28          RETURNS: Nothing
+  29          CAUTION: Only uncomment the functions that are to be used
+  30          ************************************************************************/
+  31          
+  32          
+  33          void Clear_P1_bit(uint8_t Bit_Data)
+  34          {
+  35   1        P1&=(~Bit_Data);
+  36   1      } 
+  37          
+  38          void Clear_P2_bit(uint8_t Bit_Data)
+  39          {
+  40   1        P2&=(~Bit_Data);
+  41   1      } 
+  42          
+  43          void Clear_P3_bit(uint8_t Bit_Data)
+  44          {
+  45   1        P3&=(~Bit_Data);
+  46   1      }
+  47          
+  48          /***********************************************************************
+  49          DESC:  Set the specified bits on a specified port
+  50          INPUT: 8-bit pattern with '1' bits for the bits to be set
+  51          RETURNS: Nothing
+  52          CAUTION: Only uncomment the functions that are to be used
+  53          ************************************************************************/
+  54          
+  55          
+C51 COMPILER V6.02  OUTPUTS                                                                12/08/2019 18:42:39 PAGE 2   
+
+  56          void Set_P1_bit(uint8_t Bit_Data)
+  57          {
+  58   1        P1|=Bit_Data;
+  59   1      }
+  60          
+  61           void Set_P2_bit(uint8_t Bit_Data)
+  62          {
+  63   1        P2|=Bit_Data;
+  64   1      }
+  65          
+  66          void Set_P3_bit(uint8_t Bit_Data)
+  67          {
+  68   1        P3|=Bit_Data;
+  69   1      }
+  70          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     27    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -27,7 +27,7 @@ void print_16bytes(uint8_t * array_in_p)
    for (index=0;index<16;index++)
    { 
       dat=*(input_p+index);
-      if (dat<32 || dat>126) dat=46;
+      if (dat<32 || dat>127) dat=46;
       UART_Transmit(dat);
    }
    UART_Transmit(CR);

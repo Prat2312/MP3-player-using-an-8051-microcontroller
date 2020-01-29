@@ -1,0 +1,12 @@
+"Play_Song.obj",
+"File_System.obj",
+"Outputs.obj",
+"read_sector.obj",
+"SDCard.obj",
+"SPI.obj",
+"print_bytes.obj",
+"UART.obj",
+"LED_Outputs.obj",
+"main.obj",
+"Directory_Functions.obj" 
+TO "test" 

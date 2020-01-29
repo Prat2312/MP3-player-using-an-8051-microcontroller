@@ -1,0 +1,45 @@
+### uVision2 Project, (C) Keil Software
+### Do not modify !
+
+ cExt (*.c)
+ aExt (*.a*; *.src)
+ oExt (*.obj)
+ lExt (*.lib)
+ tExt (*.txt)
+ pExt (*.plm)
+ DaveTm { 0,0,0,0,0,0,0,0 }
+
+Target (Target 1), 0x0000 // Tools: 'MCS-51'
+GRPOPT 1,(Source Group 1),1,0,0
+
+OPTFFF 1,1,1,0,0,3,3,0,<.\Play_Song.c><Play_Song.c> { 44,0,0,0,0,0,0,0,1,0,0,0,255,255,255,255,255,255,255,255,248,255,255,255,225,255,255,255,104,0,0,0,104,0,0,0,152,4,0,0,192,1,0,0 }
+OPTFFF 1,2,1,0,0,1,10,0,<.\File_System.c><File_System.c> { 44,0,0,0,0,0,0,0,1,0,0,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,156,0,0,0,156,0,0,0,200,4,0,0,240,1,0,0 }
+OPTFFF 1,3,1,0,0,1,1,0,<.\Outputs.c><Outputs.c> { 44,0,0,0,0,0,0,0,1,0,0,0,255,255,255,255,255,255,255,255,248,255,255,255,225,255,255,255,130,0,0,0,130,0,0,0,178,4,0,0,218,1,0,0 }
+OPTFFF 1,4,1,0,0,0,0,0,<.\read_sector.c><read_sector.c> 
+OPTFFF 1,5,1,0,0,0,0,0,<.\SDCard.c><SDCard.c> 
+OPTFFF 1,6,1,0,0,0,0,0,<.\SPI.c><SPI.c> 
+OPTFFF 1,7,1,0,0,0,0,0,<.\print_bytes.c><print_bytes.c> 
+OPTFFF 1,8,1,0,0,0,0,0,<.\UART.c><UART.c> 
+OPTFFF 1,9,1,0,0,0,0,0,<.\LED_Outputs.c><LED_Outputs.c> 
+OPTFFF 1,10,1,0,0,7,31,0,<.\main.c><main.c> { 44,0,0,0,2,0,0,0,3,0,0,0,255,255,255,255,255,255,255,255,248,255,255,255,225,255,255,255,0,0,0,0,0,0,0,0,200,4,0,0,240,1,0,0 }
+OPTFFF 1,11,1,0,0,113,113,0,<.\Directory_Functions.c><Directory_Functions.c> { 44,0,0,0,0,0,0,0,1,0,0,0,255,255,255,255,255,255,255,255,248,255,255,255,225,255,255,255,78,0,0,0,78,0,0,0,122,4,0,0,162,1,0,0 }
+
+
+TARGOPT 1, (Target 1)
+ CLK51=24000000
+  OPTTT 1,1,1,0
+  OPTHX 0,65535,0,0,0
+  OPTLX 120,65,8,<.\>
+  OPTLT 1,1,1,0,1,1,0,1,0,0,0
+  OPTXL 1,1,1,1,1,1,1,0,0
+  OPTFL 1,0,1
+  OPTBL 0,(Data Sheet)<DATASHTS\ATMEL\DOC0265.PDF>
+  OPTBL 1,(Add on databooks)<DATASHTS\ADDBOOKS.PDF>
+  OPTBL 2,(Instruction Set Manual)<DATASHTS\ATMEL\DOC0509.PDF>
+  OPTDL (S8051.DLL)()(DP51.DLL)(-p51)(S8051.DLL)()(TP51.DLL)(-p51)
+  OPTDBG 509,0,()()()()()()()()()() ()()()()
+  OPTDF 0x0
+  OPTLE <>
+  OPTLC <>
+EndOpt
+

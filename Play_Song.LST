@@ -1,0 +1,267 @@
+C51 COMPILER V6.02  PLAY_SONG                                                              12/08/2019 18:42:38 PAGE 1   
+
+
+C51 COMPILER V6.02, COMPILATION OF MODULE PLAY_SONG
+OBJECT MODULE PLACED IN .\Play_Song.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE .\Play_Song.c DEBUG OBJECTEXTEND
+
+stmt level    source
+
+   1          #include <stdio.h>
+   2          #include "Main.h"
+   3          #include "AT89C51RC2.h"
+   4          #include "PORT.H"
+   5          #include "SPI.h"
+   6          #include "SDCard.h"
+   7          #include "File_System.h"
+   8          #include "Directory_Functions.h"
+   9          #include "Read_Sector.h"       
+  10          #include "Play_Song.h"
+  11          #include "Outputs.h"
+  12          #include "LED_Outputs.h"
+  13          
+  14          
+  15          extern uint8_t xdata buf1[512];
+  16          extern uint8_t xdata buf2[512];
+  17          
+  18          state state_g;
+  19          
+  20          
+  21          void Play_Song(uint32_t Start_Cluster)
+  22          {
+  23   1      uint16_t index1, index2;
+  24   1      uint8_t temp8, play = 1;
+  25   1      uint32_t sector, sector_offset;
+  26   1      
+  27   1      printf("Starting Cluster = %1u\n\r",Start_Cluster);
+  28   1      
+  29   1      sector = First_Sector(Start_Cluster);
+  30   1      printf("Starting Sector = %1u\n\r", sector);
+  31   1      
+  32   1      sector_offset = 0;
+  33   1      
+  34   1       //buf1=1;
+  35   1      // buf2=0;
+  36   1      
+  37   1      index1 = 0;
+  38   1      Read_Sector(sector+sector_offset, 512, buf1);
+  39   1      sector_offset++;
+  40   1      AMBERLED=0;
+  41   1      
+  42   1      index2 = 0;
+  43   1      Read_Sector(sector+sector_offset, 512, buf2);
+  44   1      sector_offset++;
+  45   1      AMBERLED=1;
+  46   1      
+  47   1      state_g = Data_Idle_1;
+  48   1      GREENLED = 0;
+  49   1      REDLED = 1;
+  50   1      while((Start_Cluster != 0x0FFFFFFF)&&(SW4 ==1))
+  51   1      {
+  52   2      if((state_g == Load_Buffer_1)&&(sector_offset >= 64))
+  53   2      {
+  54   3      state_g = Find_Cluster_1;
+  55   3      }
+C51 COMPILER V6.02  PLAY_SONG                                                              12/08/2019 18:42:38 PAGE 2   
+
+  56   2      else if((state_g == Load_Buffer_2)&&(sector_offset >= 64))
+  57   2      {
+  58   3      state_g = Find_Cluster_2;
+  59   3      }
+  60   2      switch(state_g)
+  61   2      {
+  62   3      	case Data_Idle_1:
+  63   3      	{
+  64   4      		if (DATA_REQ == ON)
+  65   4      		{ 
+  66   5      			state_g = Data_send_1;
+  67   5      		}
+  68   4      		break;
+  69   4      	}
+  70   3      	case Data_send_1:
+  71   3      	{
+  72   4      		if(SW3 == 0)
+  73   4      		{
+  74   5      			play=0;
+  75   5      			GREENLED = 1;
+  76   5      			YELLOWLED = 0;
+  77   5      		}
+  78   4      		else if(SW2 == 0)
+  79   4      		{
+  80   5      			play = 1;
+  81   5      			GREENLED = 0;
+  82   5      			YELLOWLED = 1;
+  83   5      		}
+  84   4      
+  85   4      if (DATA_REQ==OFF)// If data request is inactive
+  86   4      
+  87   4      {
+  88   5         if(index2>511)
+  89   5           state_g = Load_Buffer_2;
+  90   5         else
+  91   5           state_g = Data_Idle_1;
+  92   5      }
+  93   4      else // If data id ACTIVE
+  94   4      {
+  95   5         if(play==1)
+  96   5      {
+  97   6      	Set_P3_bit(BIT_EN_bit); 
+  98   6         SPI_Transfer(buf1[index1], &temp8);
+  99   6      	Clear_P3_bit(BIT_EN_bit); 
+ 100   6         index1++;
+ 101   6      }
+ 102   5      if(index1>511)
+ 103   5      { 
+ 104   6          state_g = Data_send_2;
+ 105   6          if(index2>511)
+ 106   6               state_g = Load_Buffer_2;
+ 107   6      }
+ 108   5      }
+ 109   4      break;
+ 110   4      }
+ 111   3      
+ 112   3      case Load_Buffer_2:
+ 113   3      {
+ 114   4        index2=0;
+ 115   4        Read_Sector(sector+sector_offset, 512, buf2);
+ 116   4        sector_offset++;
+ 117   4        state_g = Data_Idle_1;
+C51 COMPILER V6.02  PLAY_SONG                                                              12/08/2019 18:42:38 PAGE 3   
+
+ 118   4        break;
+ 119   4      
+ 120   4      }
+ 121   3      
+ 122   3      case Find_Cluster_2:
+ 123   3      
+ 124   3      {
+ 125   4        Start_Cluster = Find_Next_Clus(Start_Cluster,buf2);
+ 126   4        sector= First_Sector(Start_Cluster);
+ 127   4        sector_offset = 0;
+ 128   4        state_g = Data_Idle_1;
+ 129   4        
+ 130   4        if(Start_Cluster == 0x0FFFFFFF)
+ 131   4        { 
+ 132   5      
+ 133   5          state_g = Data_Idle_1;
+ 134   5          LEDS_ON(REDLED);
+ 135   5         }
+ 136   4      
+ 137   4         break;
+ 138   4      
+ 139   4      }
+ 140   3      
+ 141   3      case Data_Idle_2:
+ 142   3      
+ 143   3      {  
+ 144   4      
+ 145   4        if(DATA_REQ==ON)
+ 146   4      { 
+ 147   5        state_g = Data_send_2;
+ 148   5      }
+ 149   4      
+ 150   4      break;
+ 151   4      }
+ 152   3      
+ 153   3      case Data_send_2:
+ 154   3      
+ 155   3      {
+ 156   4      
+ 157   4        if(SW3==0)
+ 158   4      
+ 159   4          play=0;
+ 160   4      
+ 161   4        else if(SW2==0)  //303
+ 162   4      
+ 163   4          play=1;
+ 164   4      
+ 165   4      if (DATA_REQ==OFF) // If data request is INACTIVE
+ 166   4      
+ 167   4      {
+ 168   5         if (index1>511)
+ 169   5       state_g = Load_Buffer_1;
+ 170   5         else
+ 171   5            state_g = Data_Idle_2;
+ 172   5      }
+ 173   4      
+ 174   4      else // If data request is ACTIVE
+ 175   4      {
+ 176   5         if((play==1))
+ 177   5      
+ 178   5         { 
+ 179   6         Set_P3_bit(BIT_EN_bit);  
+C51 COMPILER V6.02  PLAY_SONG                                                              12/08/2019 18:42:38 PAGE 4   
+
+ 180   6         SPI_Transfer(buf2[index2], &temp8);
+ 181   6          Clear_P3_bit(BIT_EN_bit); 
+ 182   6           index2++;
+ 183   6      
+ 184   6      }
+ 185   5      if(index2>511)
+ 186   5      {
+ 187   6         state_g = Data_send_1;
+ 188   6         if(index1>511)
+ 189   6      
+ 190   6            state_g= Load_Buffer_1;
+ 191   6      
+ 192   6      }
+ 193   5      
+ 194   5      }
+ 195   4      
+ 196   4      break;
+ 197   4      }
+ 198   3      
+ 199   3      
+ 200   3      case Load_Buffer_1:
+ 201   3      
+ 202   3      {
+ 203   4      
+ 204   4        index1=0;
+ 205   4        Read_Sector(sector+sector_offset, 512, buf1);
+ 206   4        sector_offset++;
+ 207   4        state_g = Data_Idle_2;
+ 208   4        break;
+ 209   4      }
+ 210   3      
+ 211   3      case Find_Cluster_1:
+ 212   3      
+ 213   3      {
+ 214   4      
+ 215   4         Start_Cluster = Find_Next_Clus(Start_Cluster, buf1);
+ 216   4         sector=First_Sector(Start_Cluster);
+ 217   4         sector_offset = 0;
+ 218   4         state_g = Data_Idle_2;
+ 219   4      
+ 220   4      
+ 221   4      if(Start_Cluster == 0x0FFFFFFF)
+ 222   4      { 
+ 223   5        state_g = Data_Idle_2;
+ 224   5      }
+ 225   4      
+ 226   4      break;
+ 227   4      }
+ 228   3      }
+ 229   2      }
+ 230   1      
+ 231   1      LEDS_OFF(GREENLED);
+ 232   1      LEDS_OFF(YELLOWLED);
+ 233   1      LEDS_ON(REDLED);
+ 234   1      }
+ 235          
+ 236          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    952    ----
+   CONSTANT SIZE    =     49    ----
+C51 COMPILER V6.02  PLAY_SONG                                                              12/08/2019 18:42:38 PAGE 5   
+
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      1      18
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

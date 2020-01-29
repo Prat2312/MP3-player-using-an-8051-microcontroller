@@ -1,4 +1,4 @@
-C51 COMPILER V6.02  SPI                                                                    10/11/2019 18:41:09 PAGE 1   
+C51 COMPILER V6.02  SPI                                                                    12/08/2019 18:42:40 PAGE 1   
 
 
 C51 COMPILER V6.02, COMPILATION OF MODULE SPI
@@ -7,93 +7,98 @@ COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE .\SPI.c DEBUG OBJECTEXTEND
 
 stmt level    source
 
-   1          #include "SPI.h"
-   2          #include "LCD_Routines.h"
-   3          #include "LCD_hardware_functions.h"
-   4          #include "Timer0_hardware_delay_1ms.h"
+   1          #include "main.h"
+   2          #include "PORT.H"
+   3          #include "SPI.h"
+   4          
    5          
-   6          uint8_t SPI_Master_Init(uint32_t clock_freq)
+   6          uint8_t SPI_Master_Init(uint32_t clock_rate)
    7          {
-   8   1      	uint8_t divider,return_value,clock_rate_error; 
-   9   1      	divider=(OSC_FREQ*6)/(OSC_PER_INST*clock_freq);
-  10   1      	if(divider<2) 
-  11   1      	{
-  12   2      		SPCON=0x70|(CPOL<<3)|(CPHA<<2); 
-  13   2      	}
-  14   1      	else if(divider<4) 
-  15   1      	{
-  16   2      		SPCON=0x71|(CPOL<<3)|(CPHA<<2); 
-  17   2      	}
-  18   1      	else if(divider<8) 
-  19   1      	{
-  20   2      		SPCON=0x72|(CPOL<<3)|(CPHA<<2); 
-  21   2      	}
-  22   1      	else if(divider<16) 
-  23   1      	{
-  24   2      		SPCON=0x73|(CPOL<<3)|(CPHA<<2); 
-  25   2      	}
-  26   1      	else if(divider<32) 
-  27   1      	{
-  28   2      		SPCON=0xF0|(CPOL<<3)|(CPHA<<2); 
-  29   2      	}
-  30   1      	else if(divider<64) 
-  31   1      	{
-  32   2      		SPCON=0xF1|(CPOL<<3)|(CPHA<<2); 
-  33   2      	}
-  34   1      	else if(divider<128) 
-  35   1      	{
-  36   2      		SPCON=0xF2|(CPOL<<3)|(CPHA<<2); 
-  37   2      	}
-  38   1      	else 
-  39   1      	{
-  40   2      		return_value=clock_rate_error; 
-  41   2      	}
-  42   1      }
-*** WARNING C173 IN LINE 42 OF .\SPI.C: missing return-expression
-  43          			
-  44          uint8_t SPI_Transfer(uint8_t send_value, uint8_t * rec_value)// First start a transfer by writing send_val
-             -ueto SPDAT
-  45          {
-  46   1      	uint8_t status, SPI_error,error_flag, no_errors,timeout_error; 
-  47   1      	uint32_t timeout;
-  48   1      	SPDAT=send_value;// Next wait in a loop until SPIF is set or a timeout occurs
-  49   1      	timeout=0;
-  50   1      	do 
-  51   1      	{
-  52   2      	status=SPSTA;
-  53   2      	timeout++;
-C51 COMPILER V6.02  SPI                                                                    10/11/2019 18:41:09 PAGE 2   
+   8   1        uint8_t divider,return_val;
+   9   1        return_val=init_okay;
+  10   1        divider=(uint8_t)(((OSC_FREQ/OSC_PER_INST)*6)/clock_rate);
+  11   1        if(divider<=2)
+  12   1        {
+  13   2           SPCON=0x70;
+  14   2        }
+  15   1        else if((divider>2)&&(divider<=4))
+  16   1        {
+  17   2           SPCON=0x71;
+  18   2        }
+  19   1        else if((divider>4)&&(divider<=8))
+  20   1        {
+  21   2           SPCON=0x72;
+  22   2        }
+  23   1        else if((divider>8)&&(divider<=16))
+  24   1        {
+  25   2           SPCON=0x73;
+  26   2        } 
+  27   1        else if((divider>16)&&(divider<=32))
+  28   1        {
+  29   2           SPCON=0xF0;
+  30   2        }
+  31   1        else if((divider>32)&&(divider<=64))
+  32   1        {
+  33   2           SPCON=0xF1;
+  34   2        }
+  35   1        else if((divider>64)&&(divider<=128))
+  36   1        {
+  37   2           SPCON=0xF2;
+  38   2        }
+  39   1        else  // if the SPI clock rate is too slow, a divider cannot be found
+  40   1        {
+  41   2          return_val=illegal_clockrate;
+  42   2        }
+  43   1        return return_val;
+  44   1      }
+  45          
+  46          
+  47          
+  48          uint8_t SPI_Transfer(uint8_t data_input, uint8_t * data_output_p)
+  49          {
+  50   1         uint8_t test, timeout;
+  51   1         timeout=0;
+  52   1         SPDAT=data_input;
+  53   1         do
+  54   1         {
+  55   2            test=SPSTA;
+C51 COMPILER V6.02  SPI                                                                    12/08/2019 18:42:40 PAGE 2   
 
-  54   2      	}while(((status&0xF0)==0)&&(timeout!=0));// Check the timeout value and the value read from SPSTA for err
-             -ors
-  55   1      	if(timeout==0)
-  56   1      	{    // timeout error
-  57   2      		error_flag=timeout_error;
-  58   2      		*rec_value=0xFF;
-  59   2      	}
-  60   1      	else if((status&0x70)!=0)
-  61   1      	{
-  62   2      		error_flag=SPI_error;
-  63   2      		*rec_value=0xFF;
-  64   2      	}
-  65   1      	else
-  66   1      	{
-  67   2      		error_flag=no_errors;
-  68   2      		*rec_value=SPDAT;
-  69   2      	}// Return the error flag and the received value (if no errors have occurred).
-  70   1      	return error_flag;
-  71   1      }
+  56   2      	  timeout++;
+  57   2         }while(((test&0xF0)==0)&&(timeout!=0));
+  58   1         if(timeout!=0)
+  59   1         {
+  60   2           if((test&0x70)==0)  // no errors
+  61   2           {
+  62   3               *data_output_p=SPDAT;
+  63   3               timeout=no_errors;
+  64   3           }
+  65   2           else
+  66   2           {
+  67   3               *data_output_p=0xff;
+  68   3               timeout=SPI_ERROR;
+  69   3           }
+  70   2         }
+  71   1         else
+  72   1         {
+  73   2           *data_output_p=0xff;
+  74   2           timeout=spi_timeout_error;
+  75   2         }
+  76   1         return timeout;
+  77   1      }
+  78           
+  79          
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    257    ----
+   CODE SIZE        =    191    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----      18
+   DATA SIZE        =   ----       1
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.
 
 
-C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

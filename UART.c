@@ -4,32 +4,33 @@
 
 
 /***********************************************************************
-DESC:    Initializes UART for mode 1 to specified Baud Rate
+DESC:    Initializes UART for mode 1
+         Baudrate: 9600
 INPUT: Nothing
 RETURNS: Nothing
-CAUTION: Uses Baudrate Generator instead of timer 1.  SPD should be set for best results.
+CAUTION: Uses Baudrate Generator instead of a standard timer
 ************************************************************************/
-void uart_init(uint16_t BAUD_RATE)
+void uart_init(void)
 {
   
   // configure UART
-  // set or clear SMOD1 and clear SMOD0
-  PCON &= 0x3F;  // Clears both SMOD0 and SMOD1
-  PCON |= (SMOD1 << 7); // Sets SMOD1 to the defined value
-   
-  // serial interrupt is disabled
-  ES=0;  
-
-  // UART set to MODE1, Receive is enabled and Transmit Flag is set to indicate Transmit Buffer is empty
-  SCON = UART_MODE1|RECEIVE_ENABLE|TRANSMIT_FLAG_SET;
+  // set or clear SMOD0
+  PCON |= (SMOD1 << 7);
+  PCON &= ~((~(SMOD1) <<7) | 0x40);
+  SCON = UART_MODE1|RECEIVE_ENABLE;
 
   // Initialize Baud Rate Generator
   BDRCON=0;   //Stops and disables Baud Rate Gen.
-  // BRL = BAUD_RATE_RELOAD   // Use this line for compile time baud rate set up.
-  BRL= (uint8_t)(256-(((1+(5*SPD))*(1+(1*SMOD1))*OSC_FREQ)+(16UL*OSC_PER_INST*BAUD_RATE))/(32UL*OSC_PER_INST*BAUD_RATE));
+  BRL= BAUD_RATE_RELOAD;
   BDRCON= (0x1C | (SPD << 1));  // Enables Baud Rate Gen. for RxD and TxD
 
-  
+  // initially not busy
+
+  TI=1;
+
+  // serial interrupt is disabled
+  ES=0;
+
 
 } // uart_init
 
@@ -37,16 +38,30 @@ void uart_init(uint16_t BAUD_RATE)
 /***********************************************************************
 DESC:    Sends one character through the UART
 INPUT:   Character to send
-RETURNS: Character sent
+RETURNS: Character sent or error flag
 CAUTION: TI must be set during the initialization
 ************************************************************************/
 
 uint8_t UART_Transmit(uint8_t send_value)
 {
-   while(TI==0);
-   SBUF=send_value;
-   TI=0;
-   return send_value;
+   uint8_t return_value;
+   uint16_t timeout;
+   timeout=0;
+   do
+   {
+     timeout++;
+   }while((TI==0)&&(timeout!=0));
+   if(timeout!=0)
+   {
+     SBUF=send_value;
+     return_value=send_value;
+     TI=0;
+   }
+   else
+   {
+     return_value=UART_timeout;
+   }
+   return return_value;
 }
    
 
@@ -64,9 +79,11 @@ CAUTION: Will stop program execution until a character is received
 
 uint8_t UART_Receive(void)
 {
+    uint8_t return_value;
     while(RI==0);
+    return_value=SBUF;
     RI=0;
-    return SBUF;
+    return return_value;
 }
 
 

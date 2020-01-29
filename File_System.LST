@@ -1,0 +1,327 @@
+C51 COMPILER V6.02  FILE_SYSTEM                                                            12/08/2019 18:42:39 PAGE 1   
+
+
+C51 COMPILER V6.02, COMPILATION OF MODULE FILE_SYSTEM
+OBJECT MODULE PLACED IN .\File_System.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE .\File_System.c DEBUG OBJECTEXTEND
+
+stmt level    source
+
+   1          #include "main.h"
+   2          #include "read_sector.h"
+   3          #include "File_System.h"
+   4          #include "Directory_Functions.h"
+   5          #include <stdio.h>
+   6          
+   7          
+   8          
+   9          
+  10          extern uint32_t idata  FirstDataSec_g, StartofFAT_g, FirstRootDirSec_g, RootDirSecs_g;
+  11          extern uint16_t idata  BytesPerSec_g;
+  12          extern uint8_t idata SecPerClus_g, FATtype_g, BytesPerSecShift_g,FATshift_g;
+  13          
+  14          uint8_t xdata array_read[512];
+  15          
+  16          
+  17          
+  18          ///////////////////////////////////////////////////////////////////////////////
+  19          
+  20          uint8_t Mount_Drive(uint8_t xdata * array_read)
+  21          {
+  22   1      	uint8_t error_flag;
+  23   1      	uint8_t first_byte;	
+  24   1      	uint8_t eight_bit_value;	
+  25   1      	uint32_t  BPB;	
+  26   1      	
+  27   1      	error_flag = Read_Sector(0, 512, array_read);						
+  28   1      	if(error_flag == no_errors)
+  29   1      	{
+  30   2      		eight_bit_value = read8(0,array_read);
+  31   2      		printf("\n eight_bit_valu = %bu \n",eight_bit_value);
+  32   2      		if(eight_bit_value!= 0xEB && eight_bit_value!= 0xE9)
+  33   2      		{
+  34   3      			BPB = read32(0x01C6, array_read);
+  35   3      			printf("\n Rel_Sec= %lu \n",BPB);
+  36   3      			error_flag = Read_Sector(BPB, 512, array_read);
+  37   3      			if(error_flag == no_errors)
+  38   3      			{	
+  39   4      				first_byte = read8(0,array_read);
+  40   4      				printf("\n first_byte = %bu \n",first_byte);
+  41   4      				if(first_byte != 0xEB && first_byte != 0xE9)
+  42   4      				{ 
+  43   5      				error_flag = not_found;					//change to appropriate error
+  44   5      				printf("\n BPB not_found \n");
+  45   5      				}											
+  46   4      				else
+  47   4      				{
+  48   5      					printf("\n First block is not BPB \n",BPB);
+  49   5      				BIOS_parameter_block();
+  50   5      				}
+  51   4      			}
+  52   3      			else
+  53   3      			{
+  54   4      				error_flag = read_error;
+  55   4      			}
+C51 COMPILER V6.02  FILE_SYSTEM                                                            12/08/2019 18:42:39 PAGE 2   
+
+  56   3      
+  57   3      		}
+  58   2      		else
+  59   2      		{
+  60   3      		printf("\n First block is BPB \n",BPB);
+  61   3      		BIOS_parameter_block();
+  62   3      		}
+  63   2      
+  64   2      	}
+  65   1      	else 
+  66   1      	{ 
+  67   2      		error_flag = read_error;
+  68   2      	}
+  69   1      return error_flag;
+  70   1      }
+  71          
+  72          
+  73          
+  74          
+  75          
+  76          void BIOS_parameter_block()
+  77          	{
+  78   1      		uint32_t FATSz,DataSec,CountofClusters ;
+  79   1      		uint32_t TotalSec;
+  80   1       		uint16_t  Rsvd_Sec_Count ;
+  81   1       		uint8_t Num_FAT ;
+  82   1       		uint16_t  Root_Entry_Count;
+  83   1      		 uint16_t  Total_Sec_16;	
+  84   1      		 uint16_t FAT_Size_16 ;
+  85   1       		uint32_t   Total_Sec_32 ;
+  86   1       		uint32_t  FAT_Size_32;
+  87   1      		 uint32_t  Rootr_Clus ;
+  88   1      
+  89   1      
+  90   1         		 BytesPerSec_g = read16(0x0B, array_read);
+  91   1      		 	 printf("\n BytesPerSec_g = %u \n",BytesPerSec_g );
+  92   1      		SecPerClus_g =  read8(0x0D, array_read);
+  93   1      			 printf("\n SecPerClus_g = %bu \n",SecPerClus_g );
+  94   1      		Rsvd_Sec_Count = read16(0x0E,array_read);
+  95   1      			 printf("\n Rsvd_Sec_Count = %u \n",Rsvd_Sec_Count );
+  96   1      		Num_FAT = read8(0x10, array_read);
+  97   1      			 printf("\n Num_FAT = %bu \n",Num_FAT );
+  98   1      		Root_Entry_Count = read16(0x11,array_read);
+  99   1      			 printf("\n Root_Entry_Count = %u \n",Root_Entry_Count );
+ 100   1      		Total_Sec_16 = read16(0x13,array_read);
+ 101   1      			 printf("\n Total_Sec_16 = %u \n",Total_Sec_16 );
+ 102   1      		FAT_Size_16 = read16(0x16,array_read);
+ 103   1      			 printf("\n FAT_Size_16 = %u \n",FAT_Size_16 );
+ 104   1      		Total_Sec_32 = read32(0x20,array_read);
+ 105   1      			 printf("\n Total_Sec_32 = %lu \n",Total_Sec_32 );
+ 106   1      		FAT_Size_32 = read32(0x24,array_read);
+ 107   1      			 printf("\n FAT_Size_32 = %lu \n",FAT_Size_32 );
+ 108   1      		Rootr_Clus = read32(0x2C,array_read);
+ 109   1      			 printf("\n Rootr_Clus = %lu \n",Rootr_Clus );
+ 110   1      		
+ 111   1      	 RootDirSecs_g = ((Root_Entry_Count*32) + ( BytesPerSec_g -1))/ BytesPerSec_g;
+ 112   1           printf("\n RootDirSecs_g = %lu \n",RootDirSecs_g );
+ 113   1      	if(FAT_Size_16!=0)
+ 114   1      	{
+ 115   2      		FATSz = FAT_Size_16;
+ 116   2      	}
+ 117   1      	else
+C51 COMPILER V6.02  FILE_SYSTEM                                                            12/08/2019 18:42:39 PAGE 3   
+
+ 118   1      	{
+ 119   2      		FATSz = FAT_Size_32;
+ 120   2      	}
+ 121   1      	  printf("\n FATSz = %lu \n",FATSz );
+ 122   1      		if(Total_Sec_16!= 0)
+ 123   1      	{
+ 124   2      		TotalSec = Total_Sec_16;
+ 125   2      	}
+ 126   1      		else
+ 127   1      	{
+ 128   2      			TotalSec = Total_Sec_32;
+ 129   2      	}
+ 130   1      	 printf("\n TotalSec = %lu \n",TotalSec );
+ 131   1      
+ 132   1      	DataSec = TotalSec - (Rsvd_Sec_Count + (Num_FAT*FATSz) +  RootDirSecs_g );
+ 133   1      	 printf("\n DataSec = %lu \n",DataSec );
+ 134   1      	CountofClusters = DataSec/SecPerClus_g;
+ 135   1      	 printf("\n CountofClusters = %lu \n",CountofClusters );
+ 136   1      	if(CountofClusters < 65525) 
+ 137   1      	{
+ 138   2      	 printf("\n CARD is FAT16 \n");
+ 139   2      	 FATtype_g = FAT16;
+ 140   2      	}
+ 141   1      	else
+ 142   1      	{
+ 143   2      	printf("\n CARD is FAT32 \n");
+ 144   2      	 FATtype_g = FAT32;
+ 145   2      	}
+ 146   1      	
+ 147   1      	 StartofFAT_g = Rsvd_Sec_Count + Relative_Sectors; 
+ 148   1      	
+ 149   1      	 FirstDataSec_g = 	 StartofFAT_g + (Num_FAT*FATSz) +  RootDirSecs_g;
+ 150   1      	
+ 151   1      	if( FATtype_g == FAT16)
+ 152   1      	{
+ 153   2      	 FirstRootDirSec_g = Rsvd_Sec_Count + (Num_FAT*FATSz) + Relative_Sectors; //FAT16
+ 154   2      	}
+ 155   1      	else
+ 156   1      	{
+ 157   2      	 FirstRootDirSec_g = ((Rootr_Clus - 2)* SecPerClus_g ) +  FirstDataSec_g;	//FAT32
+ 158   2      	}
+ 159   1      }
+ 160          
+ 161          
+ 162          
+ 163          uint32_t First_Sector(uint32_t Cluster_Num)
+ 164          {
+ 165   1      	uint32_t First_Sector_of_Cluster;
+ 166   1      	First_Sector_of_Cluster = ((Cluster_Num - 2)* SecPerClus_g) +  FirstDataSec_g;  //cluster 0 is a problem?
+             -?
+ 167   1      	return First_Sector_of_Cluster;
+ 168   1      }
+ 169          
+ 170          
+ 171          
+ 172          uint32_t Find_Next_Clus(uint32_t cluster_num, uint8_t*array)
+ 173          {
+ 174   1      	uint16_t Offset;
+ 175   1      	uint32_t return_clus,error_flag,Sector;
+ 176   1      	uint8_t FATtype_g;
+ 177   1      
+ 178   1      	
+C51 COMPILER V6.02  FILE_SYSTEM                                                            12/08/2019 18:42:39 PAGE 4   
+
+ 179   1      if( FATtype_g == FAT16)
+ 180   1      	FATtype_g = FAT16;
+ 181   1      else
+ 182   1      	FATtype_g = FAT32;
+ 183   1      
+ 184   1      Sector = ((cluster_num * FATtype_g)/ BytesPerSec_g) +  StartofFAT_g;
+ 185   1      error_flag = Read_Sector(Sector,  BytesPerSec_g, array);
+ 186   1      Offset = ((cluster_num * FATtype_g)% BytesPerSec_g);
+ 187   1      
+ 188   1      if(FATtype_g == FAT32)
+ 189   1      {
+ 190   2      return_clus = read32(Offset, array);
+ 191   2      	return_clus &= 0x0FFFFFFF;
+ 192   2      	}
+ 193   1      else if(FATtype_g == FAT16)
+ 194   1      {
+ 195   2      return_clus = (uint32_t)read16(Offset, array);
+ 196   2      }
+ 197   1      return return_clus;
+ 198   1      }
+ 199          
+ 200          /////////////////////////////////////////////////////////////
+ 201          
+ 202          
+ 203          uint8_t read8(uint16_t offset, uint8_t * array_name)
+ 204          {
+ 205   1      uint8_t return_val;
+ 206   1      uint8_t temp;
+ 207   1      return_val = 0;
+ 208   1      offset &= 0x1FF; // limit offset to 0 to 511
+ 209   1      temp = *(array_name+offset);
+ 210   1      return_val = temp;
+ 211   1      //printf("\n 8 bits = %bu \n", return_val);
+ 212   1      return return_val;
+ 213   1      }
+ 214          
+ 215          ///////////////////////////////////////////////////////////////
+ 216          
+ 217          uint16_t read16(uint16_t offset, uint8_t * array_name)
+ 218          {
+ 219   1      uint16_t return_val;
+ 220   1      uint8_t temp, i;
+ 221   1      return_val = 0 ;
+ 222   1      offset &= 0x1FF; // limit offset to 0 to 511
+ 223   1      for(i=0;i<2;i++)
+ 224   1      {
+ 225   2      temp=*(array_name+offset+(1-i));
+ 226   2      return_val = return_val<<8;
+ 227   2      return_val |= temp;
+ 228   2      }
+ 229   1      //printf("\n 16 bits = %u \n", return_val);
+ 230   1      return return_val;
+ 231   1      }
+ 232          
+ 233          ///////////////////////////////////////////////////////////////////////
+ 234          
+ 235          uint32_t read32(uint16_t offset, uint8_t * array_name)
+ 236          {
+ 237   1      uint32_t return_val;
+ 238   1      uint8_t temp, i;
+ 239   1      return_val = 0;
+ 240   1      offset &= 0x1FF; // limit offset to 0 to 511
+C51 COMPILER V6.02  FILE_SYSTEM                                                            12/08/2019 18:42:39 PAGE 5   
+
+ 241   1      for(i=0;i<4;i++)
+ 242   1      {
+ 243   2      temp=*(array_name+offset+(3-i));
+ 244   2      return_val = return_val<<8;
+ 245   2      return_val |= temp;
+ 246   2      }
+ 247   1      //printf("\n 32 = %lu \n", return_val);
+ 248   1      return return_val;
+ 249   1      }
+ 250          
+ 251          //////////////////////////////////////////////////////////
+ 252          
+ 253          uint8_t open_file(uint32_t Clus_num, uint8_t *array_name)
+ 254          {
+ 255   1      	uint8_t key_pressed, error_flag; 
+ 256   1      	uint32_t Sector, First_sector, Offset, Current_Clus;
+ 257   1      
+ 258   1      	Current_Clus = Clus_num;
+ 259   1      
+ 260   1      	First_sector = First_Sector(Current_Clus);
+ 261   1      	Offset = 0;
+ 262   1      	Sector = First_sector;
+ 263   1      	do
+ 264   1      	{
+ 265   2      		Sector = Sector + Offset;
+ 266   2      		if(Offset == 0)
+ 267   2      		{
+ 268   3      			Sector = ((Current_Clus - 2)*SecPerClus_g) + FirstDataSec_g;
+ 269   3      		}
+ 270   2      		error_flag == Read_Sector(Sector, 512, array_name);
+*** WARNING C275 IN LINE 270 OF .\FILE_SYSTEM.C: expression with possibly no effect
+ 271   2      		if(error_flag == no_errors)
+ 272   2      		{
+ 273   3      			print_memory(array_name, 512);
+ 274   3      			Offset++;
+ 275   3      			if(Offset == SecPerClus_g)
+ 276   3      			{
+ 277   4      				Offset = 0;
+ 278   4      				Current_Clus = Find_Next_Clus(Current_Clus, array_name);
+ 279   4      			}
+ 280   3      			printf("Press X to exit, others to continue \n");
+ 281   3      			key_pressed = UART_Receive();
+ 282   3      		}
+ 283   2      		else
+ 284   2      		{
+ 285   3      			key_pressed = 0x78;
+ 286   3      		}
+ 287   2      		//printf("\n %bu is pressed \n", key_pressed);
+ 288   2      	}while(key_pressed != 120 && key_pressed != 88);
+ 289   1      	//printf("\n exit the loop \n", key_pressed);
+ 290   1      	return error_flag;
+ 291   1      }
+ 292          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1993    ----
+   CONSTANT SIZE    =    531    ----
+   XDATA SIZE       =    512    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----     106
+   IDATA SIZE       =   ----    ----
+C51 COMPILER V6.02  FILE_SYSTEM                                                            12/08/2019 18:42:39 PAGE 6   
+
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
